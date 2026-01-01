@@ -19,40 +19,40 @@ st.set_page_config(page_title="YAFT Kereste", page_icon="🌲")
 st.markdown("<h1 style='text-align: center; color: darkblue;'>YAFT İNŞAAT VE TİCARET A.Ş.</h1>", unsafe_allow_html=True)
 st.markdown("<h4 style='text-align: center;'>Mobil Kereste Hesaplayıcı</h4>", unsafe_allow_html=True)
 
-# --- GÜÇLÜ FONT AYARLAMA (Türkçe Karakter İçin) ---
+# --- FONT AYARLAMA ---
 def get_turkish_font():
-    """
-    Sunucuda (Linux) veya yerelde Türkçe karakter destekleyen 
-    'DejaVuSans' fontunu bulur veya indirir.
-    """
     font_name = "DejaVuSans"
     font_file = "DejaVuSans.ttf"
-    
-    # Font dosyası yoksa GitHub'dan indir
     if not os.path.exists(font_file):
         url = "https://raw.githubusercontent.com/dejavu-fonts/dejavu-fonts/master/ttf/DejaVuSans.ttf"
         try:
             urllib.request.urlretrieve(url, font_file)
-        except Exception as e:
-            st.error(f"Font indirilemedi: {e}")
-            return "Helvetica" # İndiremezse standart fonta dön
-
-    # Fontu ReportLab'e tanıt
+        except:
+            return "Helvetica"
     try:
         pdfmetrics.registerFont(TTFont(font_name, font_file))
         return font_name
-    except Exception as e:
+    except:
         return "Helvetica"
 
-# --- Hafıza (Liste Kaybolmasın) ---
+# --- Hafıza ---
 if 'veriler' not in st.session_state:
     st.session_state.veriler = []
 
 # --- GİRİŞ ALANI ---
 with st.container():
     st.write("---")
-    cins = st.text_input("Ağaç Cinsi (Örn: Çam, Meşe)", value="")
     
+    # --- YENİ EKLENEN KISIM: AÇILIR MENÜ ---
+    agac_listesi = ["Çam", "Meşe", "Kayın", "Gürgen", "Ladin", "Kavak", "Diğer"]
+    secilen = st.selectbox("Ağaç Cinsi Seç:", agac_listesi)
+    
+    if secilen == "Diğer":
+        cins = st.text_input("Ağaç Cinsini Yazın:", value="")
+    else:
+        cins = secilen
+    # ---------------------------------------
+
     col1, col2 = st.columns(2)
     with col1:
         adet = st.number_input("Adet", min_value=1, value=1, step=1)
@@ -75,7 +75,7 @@ with st.container():
                 "Hacim (m3)": round(hacim_m3, 4)
             }
             st.session_state.veriler.append(yeni_veri)
-            st.success("Eklendi!")
+            st.success(f"{cins} Eklendi!")
         else:
             st.error("Lütfen ölçüleri eksiksiz girin.")
 
@@ -88,28 +88,16 @@ if len(st.session_state.veriler) > 0:
     toplam_m3 = df["Hacim (m3)"].sum()
     st.info(f"**TOPLAM HACİM:** {toplam_m3:.4f} m³")
 
-    # --- PDF FONKSİYONU ---
+    # PDF Fonksiyonu
     def create_pdf(dataframe, total_m3):
         buffer = io.BytesIO()
-        
-        # Fontu hazırla
         tr_font = get_turkish_font()
 
         doc = SimpleDocTemplate(buffer, pagesize=A4)
         elements = []
         styles = getSampleStyleSheet()
 
-        # Başlık Stili
-        baslik_stili = ParagraphStyle(
-            'Baslik',
-            parent=styles['Heading1'],
-            fontName=tr_font,  # Türkçe Font
-            fontSize=18,
-            textColor=colors.darkblue,
-            alignment=TA_CENTER,
-            spaceAfter=12
-        )
-        
+        baslik_stili = ParagraphStyle('Baslik', parent=styles['Heading1'], fontName=tr_font, fontSize=18, textColor=colors.darkblue, alignment=TA_CENTER, spaceAfter=12)
         elements.append(Paragraph("YAFT İNŞAAT VE TİCARET A.Ş.", baslik_stili))
         elements.append(Spacer(1, 10))
         
@@ -117,17 +105,15 @@ if len(st.session_state.veriler) > 0:
         elements.append(Paragraph(f"Kereste Hesap Dökümü - {datetime.datetime.now().strftime('%d.%m.%Y')}", alt_baslik_stili))
         elements.append(Spacer(1, 20))
 
-        # Tablo Verisi
         data = [['Ağaç Cinsi', 'Adet', 'En', 'Kalınlık', 'Boy', 'Hacim (m3)']]
         for index, row in dataframe.iterrows():
             data.append([row['Ağaç Cinsi'], row['Adet'], row['En'], row['Kalınlık'], row['Boy'], row['Hacim (m3)']])
         
         data.append(["", "", "", "", "TOPLAM:", f"{total_m3:.4f}"])
 
-        # Tablo Stili
         t = Table(data)
         style = TableStyle([
-            ('FONTNAME', (0, 0), (-1, -1), tr_font), # TÜM TABLOYU TÜRKÇE FONT YAP
+            ('FONTNAME', (0, 0), (-1, -1), tr_font),
             ('BACKGROUND', (0, 0), (-1, 0), colors.darkblue),
             ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
             ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
@@ -139,21 +125,12 @@ if len(st.session_state.veriler) > 0:
         ])
         t.setStyle(style)
         elements.append(t)
-        
         doc.build(elements)
         buffer.seek(0)
         return buffer
 
-    # İNDİR BUTONU
     pdf_bytes = create_pdf(df, toplam_m3)
-    st.download_button(
-        label="📄 PDF İNDİR", 
-        data=pdf_bytes, 
-        file_name=f"YAFT_Kereste_{datetime.datetime.now().strftime('%Y-%m-%d')}.pdf", 
-        mime="application/pdf", 
-        type="secondary", 
-        use_container_width=True
-    )
+    st.download_button(label="📄 PDF İNDİR", data=pdf_bytes, file_name=f"YAFT_Kereste_{datetime.datetime.now().strftime('%Y-%m-%d')}.pdf", mime="application/pdf", type="secondary", use_container_width=True)
     
     if st.button("LİSTEYİ TEMİZLE", type="secondary", use_container_width=True):
         st.session_state.veriler = []
