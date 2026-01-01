@@ -20,7 +20,7 @@ st.markdown("<h4 style='text-align: center;'>Mobil Kereste Hesaplayıcı</h4>", 
 
 # --- FONT AYARLAMA ---
 def get_turkish_font():
-    # GitHub'a yüklediğin dosyanın adı
+    # GitHub'a yüklediğin font dosyasının adı
     font_name = "DejaVuSans"
     font_file = "DejaVuSans.ttf" 
     
@@ -91,7 +91,7 @@ if len(st.session_state.veriler) > 0:
     ozet_df.columns = ["Ağaç Cinsi", "Toplam Hacim (m3)"]
     st.dataframe(ozet_df, use_container_width=True)
 
-    # Genel Toplam (HATALI SATIR BURASIYDI, DÜZELTİLDİ)
+    # Genel Toplam
     genel_toplam = df["Hacim (m3)"].sum()
     st.info(f"**GENEL TOPLAM HACİM:** {genel_toplam:.4f} m³")
 
@@ -118,4 +118,57 @@ if len(st.session_state.veriler) > 0:
         elements.append(Spacer(1, 5))
         
         data = [['Ağaç Cinsi', 'Adet', 'En', 'Kalınlık', 'Boy', 'Hacim (m3)']]
-        for index, row in dataframe.
+        # DÜZELTİLEN SATIR AŞAĞIDA:
+        for index, row in dataframe.iterrows():
+            data.append([row['Ağaç Cinsi'], row['Adet'], row['En'], row['Kalınlık'], row['Boy'], row['Hacim (m3)']])
+        
+        t = Table(data)
+        style = TableStyle([
+            ('FONTNAME', (0, 0), (-1, -1), tr_font),
+            ('BACKGROUND', (0, 0), (-1, 0), colors.darkblue),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+            ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+            ('BACKGROUND', (0, 1), (-1, -1), colors.aliceblue),
+            ('GRID', (0, 0), (-1, -1), 1, colors.black),
+            ('FONTSIZE', (0, 0), (-1, -1), 9),
+        ])
+        t.setStyle(style)
+        elements.append(t)
+        
+        elements.append(Spacer(1, 25))
+
+        # Tablo 2: Özet
+        elements.append(Paragraph("ÖZET RAPOR (Cins Bazında):", styles['Heading4']))
+        elements.append(Spacer(1, 5))
+
+        summary_data = [['Ağaç Cinsi', 'Toplam Hacim (m3)']]
+        for index, row in summary_df.iterrows():
+            summary_data.append([row['Ağaç Cinsi'], f"{row['Toplam Hacim (m3)']:.4f}"])
+        
+        summary_data.append(["GENEL TOPLAM:", f"{total_m3:.4f}"])
+
+        t_sum = Table(summary_data, colWidths=[200, 150])
+        style_sum = TableStyle([
+            ('FONTNAME', (0, 0), (-1, -1), tr_font),
+            ('BACKGROUND', (0, 0), (-1, 0), colors.firebrick),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+            ('GRID', (0, 0), (-1, -1), 1, colors.black),
+            ('FONTNAME', (0, -1), (-1, -1), tr_font),
+            ('BACKGROUND', (0, -1), (-1, -1), colors.lightgrey),
+        ])
+        t_sum.setStyle(style_sum)
+        elements.append(t_sum)
+
+        doc.build(elements)
+        buffer.seek(0)
+        return buffer
+
+    # İndirme Butonu
+    pdf_bytes = create_pdf(df, ozet_df, genel_toplam)
+    st.download_button(label="📄 PDF İNDİR (Özetli)", data=pdf_bytes, file_name=f"YAFT_Kereste_{datetime.datetime.now().strftime('%Y-%m-%d')}.pdf", mime="application/pdf", type="secondary", use_container_width=True)
+    
+    if st.button("LİSTEYİ TEMİZLE", type="secondary", use_container_width=True):
+        st.session_state.veriler = []
+        st.rerun()
