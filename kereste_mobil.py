@@ -43,15 +43,15 @@ if 'veriler' not in st.session_state:
 with st.container():
     st.write("---")
     
-    # --- YENİ EKLENEN KISIM: AÇILIR MENÜ ---
-    agac_listesi = ["Çam", "Meşe", "Kayın", "Gürgen", "Ladin", "Kavak", "Diğer"]
-    secilen = st.selectbox("Ağaç Cinsi Seç:", agac_listesi)
+    # --- GÜNCELLENEN KISIM: LİSTEYE "İnşaatlık" EKLENDİ ---
+    agac_listesi = ["İnşaatlık", "Çam", "Meşe", "Kayın", "Gürgen", "Ladin", "Kavak", "Diğer"]
+    secilen = st.selectbox("Cins Seç:", agac_listesi)
     
     if secilen == "Diğer":
-        cins = st.text_input("Ağaç Cinsini Yazın:", value="")
+        cins = st.text_input("Diğer Cinsi Yazın:", value="")
     else:
         cins = secilen
-    # ---------------------------------------
+    # -----------------------------------------------------
 
     col1, col2 = st.columns(2)
     with col1:
