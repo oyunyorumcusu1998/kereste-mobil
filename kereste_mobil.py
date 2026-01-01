@@ -18,18 +18,17 @@ st.set_page_config(page_title="YAFT Kereste", page_icon="🌲")
 st.markdown("<h1 style='text-align: center; color: darkblue;'>YAFT İNŞAAT VE TİCARET A.Ş.</h1>", unsafe_allow_html=True)
 st.markdown("<h4 style='text-align: center;'>Mobil Kereste Hesaplayıcı</h4>", unsafe_allow_html=True)
 
-# --- FONT AYARLAMA (Garantili Yöntem) ---
+# --- FONT AYARLAMA ---
 def get_turkish_font():
-    # GitHub'a yüklediğin dosyanın adı tam olarak böyle olmalı
+    # GitHub'a yüklediğin dosyanın adı
     font_name = "DejaVuSans"
     font_file = "DejaVuSans.ttf" 
     
     try:
-        # Fontu sisteme tanıtıyoruz
+        # Fontu sisteme tanıt
         pdfmetrics.registerFont(TTFont(font_name, font_file))
         return font_name 
     except:
-        # Dosya bulunamazsa standart fonta dön (ama yüklediysen bu çalışır)
         return "Helvetica"
 
 # --- Hafıza ---
@@ -40,7 +39,6 @@ if 'veriler' not in st.session_state:
 with st.container():
     st.write("---")
     
-    # Ağaç Listesi
     agac_listesi = ["İnşaatlık", "Çam", "Meşe", "Kayın", "Gürgen", "Ladin", "Kavak", "Diğer"]
     secilen = st.selectbox("Cins Seç:", agac_listesi)
     
@@ -80,19 +78,44 @@ if len(st.session_state.veriler) > 0:
     st.divider()
     df = pd.DataFrame(st.session_state.veriler)
     
-    # 1. EKRANDA GÖSTERİM (Detaylı)
+    # 1. EKRAN TABLOSU (Detaylı)
     st.subheader("📋 Detaylı Liste")
     st.dataframe(df, use_container_width=True)
     
-    # 2. EKRANDA GÖSTERİM (Özet)
+    # 2. EKRAN TABLOSU (Özet)
     st.divider()
     st.subheader("📊 Özet Rapor")
     
-    # Gruplama İşlemi
+    # Gruplama
     ozet_df = df.groupby("Ağaç Cinsi")["Hacim (m3)"].sum().reset_index()
     ozet_df.columns = ["Ağaç Cinsi", "Toplam Hacim (m3)"]
     st.dataframe(ozet_df, use_container_width=True)
 
-    # Genel Toplam
+    # Genel Toplam (HATALI SATIR BURASIYDI, DÜZELTİLDİ)
     genel_toplam = df["Hacim (m3)"].sum()
-    st.info(f"**GENEL
+    st.info(f"**GENEL TOPLAM HACİM:** {genel_toplam:.4f} m³")
+
+    # --- PDF FONKSİYONU ---
+    def create_pdf(dataframe, summary_df, total_m3):
+        buffer = io.BytesIO()
+        tr_font = get_turkish_font()
+
+        doc = SimpleDocTemplate(buffer, pagesize=A4)
+        elements = []
+        styles = getSampleStyleSheet()
+
+        # Başlıklar
+        baslik_stili = ParagraphStyle('Baslik', parent=styles['Heading1'], fontName=tr_font, fontSize=18, textColor=colors.darkblue, alignment=TA_CENTER, spaceAfter=12)
+        elements.append(Paragraph("YAFT İNŞAAT VE TİCARET A.Ş.", baslik_stili))
+        elements.append(Spacer(1, 10))
+        
+        alt_baslik_stili = ParagraphStyle('AltBaslik', parent=styles['Normal'], fontName=tr_font, alignment=TA_CENTER)
+        elements.append(Paragraph(f"Kereste Hesap Dökümü - {datetime.datetime.now().strftime('%d.%m.%Y')}", alt_baslik_stili))
+        elements.append(Spacer(1, 20))
+
+        # Tablo 1: Detaylar
+        elements.append(Paragraph("Detaylı Liste:", styles['Heading4']))
+        elements.append(Spacer(1, 5))
+        
+        data = [['Ağaç Cinsi', 'Adet', 'En', 'Kalınlık', 'Boy', 'Hacim (m3)']]
+        for index, row in dataframe.
