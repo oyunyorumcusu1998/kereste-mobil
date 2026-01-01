@@ -10,7 +10,6 @@ from reportlab.pdfbase.ttfonts import TTFont
 import io
 import datetime
 import os
-import urllib.request
 
 # --- Sayfa Ayarları ---
 st.set_page_config(page_title="YAFT Kereste", page_icon="🌲")
@@ -19,20 +18,18 @@ st.set_page_config(page_title="YAFT Kereste", page_icon="🌲")
 st.markdown("<h1 style='text-align: center; color: darkblue;'>YAFT İNŞAAT VE TİCARET A.Ş.</h1>", unsafe_allow_html=True)
 st.markdown("<h4 style='text-align: center;'>Mobil Kereste Hesaplayıcı</h4>", unsafe_allow_html=True)
 
-# --- FONT AYARLAMA ---
+# --- GARANTİLİ FONT AYARLAMA ---
 def get_turkish_font():
+    # Font dosyasının kodun yanında olduğunu varsayıyoruz (GitHub'a yükledik)
     font_name = "DejaVuSans"
-    font_file = "DejaVuSans.ttf"
-    if not os.path.exists(font_file):
-        url = "https://raw.githubusercontent.com/dejavu-fonts/dejavu-fonts/master/ttf/DejaVuSans.ttf"
-        try:
-            urllib.request.urlretrieve(url, font_file)
-        except:
-            return "Helvetica"
+    font_file = "DejaVuSans.ttf" 
+    
     try:
+        # Yanındaki dosyayı tanıtmaya çalış
         pdfmetrics.registerFont(TTFont(font_name, font_file))
-        return font_name
+        return font_name # Başarılı olursa bu fontu kullan
     except:
+        # Dosya yoksa veya hata olursa standarda dön (Ama dosya varsa bu çalışır)
         return "Helvetica"
 
 # --- Hafıza ---
@@ -43,7 +40,6 @@ if 'veriler' not in st.session_state:
 with st.container():
     st.write("---")
     
-    # --- GÜNCELLENEN KISIM: LİSTEYE "İnşaatlık" EKLENDİ ---
     agac_listesi = ["İnşaatlık", "Çam", "Meşe", "Kayın", "Gürgen", "Ladin", "Kavak", "Diğer"]
     secilen = st.selectbox("Cins Seç:", agac_listesi)
     
@@ -51,7 +47,6 @@ with st.container():
         cins = st.text_input("Diğer Cinsi Yazın:", value="")
     else:
         cins = secilen
-    # -----------------------------------------------------
 
     col1, col2 = st.columns(2)
     with col1:
@@ -91,6 +86,7 @@ if len(st.session_state.veriler) > 0:
     # PDF Fonksiyonu
     def create_pdf(dataframe, total_m3):
         buffer = io.BytesIO()
+        # Yüklediğimiz fontu al
         tr_font = get_turkish_font()
 
         doc = SimpleDocTemplate(buffer, pagesize=A4)
@@ -113,7 +109,7 @@ if len(st.session_state.veriler) > 0:
 
         t = Table(data)
         style = TableStyle([
-            ('FONTNAME', (0, 0), (-1, -1), tr_font),
+            ('FONTNAME', (0, 0), (-1, -1), tr_font), # BÜTÜN TABLOYA FONTU UYGULA
             ('BACKGROUND', (0, 0), (-1, 0), colors.darkblue),
             ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
             ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
