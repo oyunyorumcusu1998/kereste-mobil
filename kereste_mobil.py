@@ -20,12 +20,9 @@ st.markdown("<h4 style='text-align: center;'>Mobil Kereste Hesaplayıcı</h4>", 
 
 # --- FONT AYARLAMA ---
 def get_turkish_font():
-    # GitHub'a yüklediğin font dosyasının adı
     font_name = "DejaVuSans"
     font_file = "DejaVuSans.ttf" 
-    
     try:
-        # Fontu sisteme tanıt
         pdfmetrics.registerFont(TTFont(font_name, font_file))
         return font_name 
     except:
@@ -78,20 +75,16 @@ if len(st.session_state.veriler) > 0:
     st.divider()
     df = pd.DataFrame(st.session_state.veriler)
     
-    # 1. EKRAN TABLOSU (Detaylı)
     st.subheader("📋 Detaylı Liste")
     st.dataframe(df, use_container_width=True)
     
-    # 2. EKRAN TABLOSU (Özet)
     st.divider()
     st.subheader("📊 Özet Rapor")
     
-    # Gruplama
     ozet_df = df.groupby("Ağaç Cinsi")["Hacim (m3)"].sum().reset_index()
     ozet_df.columns = ["Ağaç Cinsi", "Toplam Hacim (m3)"]
     st.dataframe(ozet_df, use_container_width=True)
 
-    # Genel Toplam
     genel_toplam = df["Hacim (m3)"].sum()
     st.info(f"**GENEL TOPLAM HACİM:** {genel_toplam:.4f} m³")
 
@@ -102,7 +95,14 @@ if len(st.session_state.veriler) > 0:
 
         doc = SimpleDocTemplate(buffer, pagesize=A4)
         elements = []
+        
+        # --- STİL DÜZELTME BÖLÜMÜ (BURASI DEĞİŞTİ) ---
         styles = getSampleStyleSheet()
+        # Standart başlıkların hepsini Türkçe fonta zorla
+        styles['Heading1'].fontName = tr_font
+        styles['Heading4'].fontName = tr_font
+        styles['Normal'].fontName = tr_font
+        # ---------------------------------------------
 
         # Başlıklar
         baslik_stili = ParagraphStyle('Baslik', parent=styles['Heading1'], fontName=tr_font, fontSize=18, textColor=colors.darkblue, alignment=TA_CENTER, spaceAfter=12)
@@ -113,12 +113,11 @@ if len(st.session_state.veriler) > 0:
         elements.append(Paragraph(f"Kereste Hesap Dökümü - {datetime.datetime.now().strftime('%d.%m.%Y')}", alt_baslik_stili))
         elements.append(Spacer(1, 20))
 
-        # Tablo 1: Detaylar
-        elements.append(Paragraph("Detaylı Liste:", styles['Heading4']))
+        # Detaylı Liste Başlığı
+        elements.append(Paragraph("Detaylı Liste:", styles['Heading4'])) # Artık Türkçe Font Kullanacak
         elements.append(Spacer(1, 5))
         
         data = [['Ağaç Cinsi', 'Adet', 'En', 'Kalınlık', 'Boy', 'Hacim (m3)']]
-        # DÜZELTİLEN SATIR AŞAĞIDA:
         for index, row in dataframe.iterrows():
             data.append([row['Ağaç Cinsi'], row['Adet'], row['En'], row['Kalınlık'], row['Boy'], row['Hacim (m3)']])
         
@@ -138,8 +137,8 @@ if len(st.session_state.veriler) > 0:
         
         elements.append(Spacer(1, 25))
 
-        # Tablo 2: Özet
-        elements.append(Paragraph("ÖZET RAPOR (Cins Bazında):", styles['Heading4']))
+        # Özet Tablo Başlığı
+        elements.append(Paragraph("ÖZET RAPOR (Cins Bazında):", styles['Heading4'])) # Artık Türkçe Font Kullanacak
         elements.append(Spacer(1, 5))
 
         summary_data = [['Ağaç Cinsi', 'Toplam Hacim (m3)']]
